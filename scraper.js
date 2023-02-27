@@ -1,10 +1,6 @@
 const tesseract = require("tesseract.js");
+const ExcelJS = require("exceljs");
 
-// const config = {
-//   lang: "eng",
-//   oem: 1,
-//   psm: 3,
-// };
 const scrapeCategory = async (browser, url) =>
   new Promise(async (resolve, reject) => {
     try {
@@ -46,11 +42,16 @@ const scrapeCategory = async (browser, url) =>
           if (j === 6 || j === 28) {
             continue;
           } else {
-            await page.click(
+            const anchorElement = await page.$(
               `body > div > div.col-xs-12.col-sm-9 > div:nth-child(3) > div:nth-child(${j}) > a`
             );
+            const href = await anchorElement.evaluate(
+              (element) => element.href
+            );
+            page.goto(href);
           }
-          await page.waitForTimeout(2000);
+
+          await page.waitForSelector(".jumbotron");
           // const companyName = await page.$$eval(".jumbotron", (trs) => {
           //   let result = "";
           //   Array.from(trs, (tr) => {
@@ -117,7 +118,7 @@ const scrapeCategory = async (browser, url) =>
             });
             return result;
           });
-          console.log(dataCompany);
+          // console.log(dataCompany);
           const imgCompany = await page.$$eval(".jumbotron", (trs) => {
             let result = "";
             Array.from(trs, (th) => {
@@ -129,10 +130,10 @@ const scrapeCategory = async (browser, url) =>
           await tesseract
             .recognize(imgCompany, "eng")
             .then(({ data: { text } }) => {
-              console.log(text);
+              let newString = dataCompany.replace("Điện thoại trụ sở:", "");
+              newString = newString.concat(`\nĐiện thoại trụ sở: ${text}`);
+              console.log(newString);
             });
-
-          // console.log(dataReusltInfoCompany);
           await page.goto(currentUrl.concat(`&page=${k}`));
         }
       }
